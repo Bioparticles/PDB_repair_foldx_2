@@ -1,0 +1,4 @@
+{
+  "$schema": "urn:sd:schema.foldx_repair_pdb.request.1",
+  "pdb_file": "/scratch3/war391/sciansa_apps/foldx/example.pdb"
+}

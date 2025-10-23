@@ -1,0 +1,29 @@
+[project]
+name = "repair_pdb_foldx"
+version = "0.2.2"
+description = "Prepares and repairs a pdb file for downstream functions in foldx"
+authors = [
+    {name = "Andrew Warden",email = "andrew.warden@csiro.au"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "ivcap-ai-tool (>=0.7.15,<0.8.0)",
+    "pydantic (>=2.11.4,<3.0.0)"
+]
+
+[tool.poetry-plugin-ivcap]
+service-file = "tool-service.py"
+# service-id = "urn:ivcap:service:227e9443-3de1-5d62-91e5-12a375afb002"
+service-type = "lambda"
+# policy = "urn:ivcap:policy:ivcap.open.metadata"
+port = 8078
+# docker
+docker-run-opts = []
+
+[tool.ivcap.extra]
+binaries = ["foldx_20251231"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

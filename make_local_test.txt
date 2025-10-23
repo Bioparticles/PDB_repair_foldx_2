@@ -1,0 +1,14 @@
+make test-local
+curl -i -X POST \
+    -H "content-type: application/json" \
+    --data @tests/request.json \
+    http://localhost:8078
+HTTP/1.1 200 OK
+date: Tue, 22 Jul 2025 06:32:39 GMT
+server: uvicorn
+job-id: urn:ivcap:job:1f066c5a-a3b4-6f84-a5f7-9eae9cc90b25
+content-length: 67
+content-type: application/json
+ivcap-ai-tool-version: 0.7.15
+
+{"$schema":"urn:sd:schema.foldx_repair_pdb.1","pdb_file":"/scratch3/war391/sciansa_apps/foldx/example.pdb","repaired_pdb_file":"/scratch3/war391/sciansa_apps/foldx/example_prep_Repair.pdb"}
