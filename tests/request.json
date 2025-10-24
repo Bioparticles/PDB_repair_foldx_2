@@ -1,4 +1,5 @@
 {
-  "$schema": "urn:sd:schema.foldx_repair_pdb.request.1",
-  "pdb_file": "/app/example.pdb"
+  "$schema": "urn:sd:schema.foldx_repair_pdb.request.2",
+  "pdb_artifact": "urn:ivcap:artifact:example-input-pdb",
+  "output_name": "example_prep_Repair.pdb"
 }
