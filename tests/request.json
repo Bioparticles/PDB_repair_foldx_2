@@ -1,5 +1,5 @@
 {
   "$schema": "urn:sd:schema.foldx_repair_pdb.request.2",
-  "pdb_artifact": "urn:ivcap:artifact:example-input-pdb",
+  "pdb_artifact": "urn:ivcap:artifact:144ed778-864c-4e3f-a35f-b1af34ce71f3",
   "output_name": "example_prep_Repair.pdb"
 }
