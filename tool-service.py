@@ -1,9 +1,9 @@
-import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import ClassVar, Optional
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from ivcap_service import JobContext, Service, getLogger
@@ -124,6 +124,29 @@ def repair_pdb_with_foldx(
     return repaired_path
 
 
+def download_artifact(artifact, target_path: Path) -> None:
+    data_href = getattr(artifact, "_data_href", None)
+    if not data_href:
+        artifact.refresh()
+        data_href = getattr(artifact, "_data_href", None)
+    if not data_href:
+        raise ValueError(f"Artifact '{artifact.id}' does not expose a data href for download.")
+
+    client = artifact._ivcap._client.get_httpx_client()
+    timeout = httpx.Timeout(60.0, connect=10.0, read=60.0)
+    try:
+        with client.stream("GET", data_href, timeout=timeout) as response:
+            response.raise_for_status()
+            with target_path.open("wb") as out_f:
+                for chunk in response.iter_bytes():
+                    if chunk:
+                        out_f.write(chunk)
+    except httpx.HTTPError as exc:
+        raise RuntimeError(
+            f"Failed to download artifact '{artifact.id}' from '{data_href}'"
+        ) from exc
+
+
 # ====================================
 # Sciansa wrapper function
 # ====================================
@@ -149,14 +172,7 @@ def foldx_repair_pdb(req: Request, jobCtxt: JobContext) -> Result:
         input_name = artifact.name or "input.pdb"
         input_path = work_dir / input_name
 
-        source_stream = artifact.as_file()
-        try:
-            with input_path.open("wb") as local_input:
-                shutil.copyfileobj(source_stream, local_input)
-        finally:
-            close_fn = getattr(source_stream, "close", None)
-            if callable(close_fn):
-                close_fn()
+        download_artifact(artifact, input_path)
 
         jobCtxt.report.step_finished(
             "download", {"message": f"Downloaded artifact to '{input_path.name}'"}
@@ -175,15 +191,12 @@ def foldx_repair_pdb(req: Request, jobCtxt: JobContext) -> Result:
         )
 
         output_name = req.output_name or repaired_path.name
-        content_size = repaired_path.stat().st_size
-        with repaired_path.open("rb") as repaired_stream:
-            uploaded = ivcap.upload_artifact(
-                name=output_name,
-                io_stream=repaired_stream,
-                content_type="chemical/x-pdb",
-                content_size=content_size,
-                policy=req.policy,
-            )
+        uploaded = ivcap.upload_artifact(
+            name=output_name,
+            file_path=str(repaired_path),
+            content_type="chemical/x-pdb",
+            policy=req.policy,
+        )
 
         stored_policy = req.policy or getattr(uploaded, "policy", None)
         jobCtxt.report.step_finished(
