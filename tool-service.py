@@ -80,80 +80,45 @@ class Result(BaseModel):
 # ====================================
 
 
-def repair_pdb_with_foldx(work_dir, pdb_file, base):
+def repair_pdb_with_foldx(pdb_path: Path, foldx_binary: Path) -> Path:
+    base_name = pdb_path.stem
+    prep_path = pdb_path.with_name(f"{base_name}_prep.pdb")
 
-    # 1. Check for cached conversion
-    ivcap = ctxt.ivcap
-    cl = list(ivcap.list_aspects(entity=req.document, schema=Result.SCHEMA, limit=1))
-    cached = cl[0] if cl else None
-    if cached:
-        content = cached.content
-        logger.info(f"Using cached document: {content['markdown_urn']}")
-        return Result(**content) # should be able to simply return "cached"
- 
-    # 2. Download the source document
-    doc = ivcap.get_artifact(req.document)
-    doc_f = doc.as_file()
-
-    # 3. Convert the document to markdown
-    converter = MarkItDown(enable_plugins=True)
-    cres = converter.convert(doc_f, stream_info=StreamInfo(mimetype=doc.mime_type))
-    if not cres:
-        raise ValueError(f"Failed to convert document '{req.document}' to markdown.")
-    md = cres.markdown
-
-    # 4.Upload the generated markdown to IVCAP storage
-    ms = io.BytesIO(md.encode("utf-8"))
-    cart = ivcap.upload_artifact(
-        name=f"{doc.name}.md",
-        io_stream=ms,
-        content_type="text/markdown",
-        content_size=len(md),
-        policy=req.policy,
-    )
-    logger.info(f"Uploaded markdown to {cart.urn}")
-
-    # 5. Return the URI of the artifact containing the markdown conversion
-    result = Result(id=req.document, markdown_urn=cart.urn, policy=req.policy)
-    return resultth_foldx(pdb_path: Path, foldx_binary: Path) -> Path:
-        base_name = pdb_path.stem
-        prep_path = pdb_path.with_name(f"{base_name}_prep.pdb")
-
-        logger.info("Preparing PDB '%s' for FoldX repair", pdb_path.name)
-        with pdb_path.open("r", encoding="utf-8") as source, prep_path.open(
-            "w", encoding="utf-8"
-        ) as prepared:
-            for line in source:
-                newline = (
-                    line.replace("HIE", "HIS")
-                    .replace("HID", "HIS")
-                    .replace("CYX", "CYS")
-                    .replace("CYP", "CYS")
-                )
-                newline = f"{newline[:21]}A{newline[22:]}"
-                if "TER" in line:
-                    prepared.write("TER\n")
-                    break
-                prepared.write(newline)
-
-        foldx_cmd = [
-            str(foldx_binary),
-            "--command=RepairPDB",
-            f"--output-dir={pdb_path.parent}",
-            f"--pdb={prep_path.name}",
-            f"--pdb-dir={pdb_path.parent}",
-            "-d",
-            "true",
-        ]
-        logger.info("Running FoldX: %s", " ".join(foldx_cmd))
-        subprocess.run(foldx_cmd, cwd=pdb_path.parent, check=True)
-
-        repaired_path = pdb_path.with_name(f"{base_name}_prep_Repair.pdb")
-        if not repaired_path.exists():
-            raise FileNotFoundError(
-                f"FoldX did not produce repaired file at '{repaired_path}'"
+    logger.info("Preparing PDB '%s' for FoldX repair", pdb_path.name)
+    with pdb_path.open("r", encoding="utf-8") as source, prep_path.open(
+        "w", encoding="utf-8"
+    ) as prepared:
+        for line in source:
+            newline = (
+                line.replace("HIE", "HIS")
+                .replace("HID", "HIS")
+                .replace("CYX", "CYS")
+                .replace("CYP", "CYS")
             )
-        return repaired_path
+            newline = f"{newline[:21]}A{newline[22:]}"
+            if "TER" in line:
+                prepared.write("TER\n")
+                break
+            prepared.write(newline)
+
+    foldx_cmd = [
+        str(foldx_binary),
+        "--command=RepairPDB",
+        f"--output-dir={pdb_path.parent}",
+        f"--pdb={prep_path.name}",
+        f"--pdb-dir={pdb_path.parent}",
+        "-d",
+        "true",
+    ]
+    logger.info("Running FoldX: %s", " ".join(foldx_cmd))
+    subprocess.run(foldx_cmd, cwd=pdb_path.parent, check=True)
+
+    repaired_path = pdb_path.with_name(f"{base_name}_prep_Repair.pdb")
+    if not repaired_path.exists():
+        raise FileNotFoundError(
+            f"FoldX did not produce repaired file at '{repaired_path}'"
+        )
+    return repaired_path
 
 def download_artifact_to_path(artifact, target_path: Path) -> None:
     data_href = getattr(artifact, "_data_href", None)
