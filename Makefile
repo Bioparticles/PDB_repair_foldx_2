@@ -11,6 +11,7 @@ REQUEST=tests/request.json
 test-local:
 	curl -i -X POST \
 		-H "content-type: application/json" \
+		-H "timeout: 600" \
 		--data @${REQUEST} \
 		${SERVICE_URL}
 
