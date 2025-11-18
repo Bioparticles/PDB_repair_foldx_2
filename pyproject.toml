@@ -9,7 +9,9 @@ readme = "README.md"
 requires-python = ">=3.10,<4.0"
 dependencies = [
     "ivcap-ai-tool (>=0.7.15,<0.8.0)",
-    "pydantic (>=2.11.4,<3.0.0)"
+    "pydantic (>=2.11.4,<3.0.0)",
+    "ivcap-service (>=0.6.10,<0.7.0)",
+    "ivcap-client (>=0.47.3,<0.48.0)"
 ]
 
 [tool.poetry-plugin-ivcap]
@@ -20,6 +22,7 @@ service-type = "lambda"
 port = 8078
 # docker
 docker-run-opts = []
+docker-build-opts = ["--platform", "amd64"]
 
 [tool.ivcap.extra]
 binaries = ["foldx_20251231"]
