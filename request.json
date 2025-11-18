@@ -1,4 +1,6 @@
 {
-  "$schema": "urn:sd:schema.foldx_repair_pdb.request.1",
-  "pdb_artifact": "file://./example.pdb"
+  "$schema": "urn:sd:schema.foldx_repair_pdb.request.2",
+  "pdb_artifact": "urn:ivcap:artifact:fadb1f7e-9d8d-45ed-84e3-bdbca2fa5fb3",
+  "output_name": "optional-output-name.pdb",
+  "$policy": "urn:ivcap:policy:ivcap.base.artifact"
 }
